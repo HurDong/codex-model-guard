@@ -16,6 +16,22 @@ Windows용 Codex의 첫 요청에서 현재 설정을 확인하는 로컬 워크
 
 설정을 바꾸는 경로는 해당 채팅 ID로 로컬 통신하며 마우스나 키보드를 대신 조작하지 않습니다. 선택을 취소했을 때의 입력 복원은 별도의 보호 조건을 갖춘 Windows UI 자동화를 사용합니다.
 
+## 켜고 끄기
+
+`설정.cmd`를 더블클릭하세요. 번호를 입력하고 `Enter`를 누르면 해당 항목만 전환되고 바로 저장됩니다.
+
+| 번호 | 항목 | OFF일 때 |
+| --- | --- | --- |
+| `1` | 첫 설정 확인 | 확인 카드 없이 원래 요청 시작 |
+| `2` | 10초 자동 진행 | 확인 카드를 직접 응답해야 진행 |
+| `0` | 닫기 | 설정 창 닫기 |
+
+두 설정의 기본값은 ON이며 서로 독립적으로 저장됩니다. 첫 설정 확인을 끄면 10초 자동 진행 값은 보관만 합니다. 다시 켜면 보관된 값을 사용합니다.
+
+변경은 다음 확인 요청부터 적용되며, 이미 열린 카드에는 영향을 주지 않습니다. 재시작이나 Codex 설정 편집은 필요하지 않습니다. 자동 진행 OFF는 로컬 10초 타이머를 끄며 Codex 자체의 훅 대기 제한은 유지됩니다.
+
+설정 창은 내려받은 폴더 또는 설치 위치 `%USERPROFILE%\.codex\hooks\first-prompt-confirm\설정.cmd`에서 실행할 수 있습니다. `CODEX_HOME`을 지정했다면 그 위치를 사용합니다. 설정 값은 설치 위치의 `settings.json`에 저장되며 재설치해도 보존됩니다. 개인 설정 파일은 Git과 배포 ZIP에 포함하지 않습니다.
+
 ## 설치
 
 이 저장소를 ZIP으로 받아 **모두 압축 해제**한 뒤 `설치.cmd`를 더블클릭하세요. 배포용 ZIP은 아래 빌드 명령으로 만들 수 있습니다.
@@ -46,14 +62,14 @@ Windows용 Codex의 첫 요청에서 현재 설정을 확인하는 로컬 워크
 외부 npm 의존성은 없습니다. Node.js가 PATH에 없다면 아래 `node`를 실행 파일의 전체 경로로 바꿔 실행하세요.
 
 ```powershell
-node --test tests/test-confirm-first-prompt.mjs tests/test-settings-picker.mjs tests/test-background-submit.mjs
+node --test tests/test-confirm-first-prompt.mjs tests/test-settings-picker.mjs tests/test-background-submit.mjs tests/test-guard-settings.mjs
 node --test tests/test-portable-installer.mjs
 node scripts/build.mjs
 ```
 
 첫 명령은 확인·선택·중복 전송 방지를 테스트합니다. 두 번째는 Windows 및 Codex CLI가 필요하며 임시 Codex 홈에서 설치·재설치·복원과 실제 런처를 검사합니다. 실제 사용자 설정이나 실행 중인 채팅은 사용하지 않습니다. 테스트는 모델 API를 호출하지 않습니다.
 
-배포 ZIP은 `dist/Codex-Model-Guard-Windows-v5.2.0.zip`에 생성됩니다. `payload/`를 수정했다면 `node scripts/update-manifest.mjs`로 파일 해시를 갱신한 뒤 테스트하고 빌드하세요.
+배포 ZIP은 `dist/Codex-Model-Guard-Windows-v5.3.0.zip`에 생성됩니다. `payload/`를 수정했다면 `node scripts/update-manifest.mjs`로 파일 해시를 갱신한 뒤 테스트하고 빌드하세요.
 
 ## 파일 구성
 
@@ -62,6 +78,7 @@ node scripts/build.mjs
 | `payload/` | 훅, MCP 서버, 모델 조회, 로컬 전송 및 입력 복원 |
 | `installer.mjs` | 설정 병합, 백업, 두 훅의 신뢰 등록, 실패 시 복원 |
 | `설치.cmd` | Node.js 탐색 및 설치기 실행 |
+| `설정.cmd` | 첫 설정 확인·10초 자동 진행을 각각 ON/OFF |
 | `manifest.json` | 배포할 런타임 파일과 SHA-256 |
 | `tests/` | 동작 및 격리 설치 테스트 |
 | `scripts/` | 해시 갱신과 배포 ZIP 생성 |

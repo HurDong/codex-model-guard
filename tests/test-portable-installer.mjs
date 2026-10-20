@@ -19,7 +19,7 @@ const fresh=()=>{
 const options=home=>({root,home,cli,powershell,approve:async()=>true,log:()=>{}});
 
 test('export contains only portable code and user-facing copy',()=>{
-  const manifest=checkPayload(root);assert.equal(manifest.files.length,11);
+  const manifest=checkPayload(root);assert.equal(manifest.files.length,13);
   assert.ok(manifest.files.every(f=>!/(?:cache|status|installation|auth|state|catalog\.json)/i.test(f.name)));
   for(const file of manifest.files){
     const source=fs.readFileSync(path.join(root,'payload',file.name),'utf8');
@@ -124,7 +124,7 @@ test('packaged MCP boots and exposes the manifest version without requesting inf
 test('actual double-click CMD launcher installs with runtime discovery and one Y confirmation',async()=>{
   const home=fresh(),packageDir=path.join(path.dirname(home),'팀즈 받은 설치 파일');
   fs.mkdirSync(packageDir);fs.mkdirSync(path.join(packageDir,'payload'));
-  for(const name of ['설치.cmd','installer.mjs','manifest.json','먼저 읽기.txt'])fs.copyFileSync(path.join(root,name),path.join(packageDir,name));
+  for(const name of ['설치.cmd','설정.cmd','installer.mjs','manifest.json','먼저 읽기.txt'])fs.copyFileSync(path.join(root,name),path.join(packageDir,name));
   for(const entry of checkPayload(root).files)fs.copyFileSync(path.join(root,'payload',entry.name),path.join(packageDir,'payload',entry.name));
   const child=spawn('cmd.exe',['/d','/s','/c',`""${path.join(packageDir,'설치.cmd')}""`],{
     windowsHide:true,windowsVerbatimArguments:true,stdio:['pipe','pipe','pipe'],env:{...process.env,CODEX_HOME:home}
@@ -172,4 +172,26 @@ test('real CLI withdraws an unanswered card after ten seconds and continues the 
     assert.ok(notifications.some(n=>n.method==='serverRequest/resolved'),'native outstanding request must be removed');
     assert.equal(fs.readFileSync(path.join(home,'hooks','first-prompt-confirm','state',sha(start.thread.id)+'.txt'),'utf8'),'confirmed');
   }finally{rpc.close();provider.closeAllConnections();provider.close();}
+});
+
+test('settings CMD works from both installed and source folders and reinstall preserves the switches',async()=>{
+  const home=fresh(),installed=await install(options(home));
+  const file=path.join(installed.target,'settings.json');
+  async function run(launcher,answers){
+    const child=spawn('cmd.exe',['/d','/s','/c',`""${launcher}""`],{
+      windowsHide:true,windowsVerbatimArguments:true,stdio:['pipe','pipe','pipe'],env:{...process.env,CODEX_HOME:home}
+    });
+    let output='';child.stdout.on('data',b=>output+=b);child.stderr.on('data',b=>output+=b);child.stdin.on('error',()=>{});
+    const exit=await new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>{child.kill();reject(Error('Settings CMD timeout: '+output));},5000);
+      child.on('exit',code=>{clearTimeout(timer);resolve(code);});child.on('error',reject);
+      child.stdin.end(answers);
+    });
+    assert.equal(exit,0,output);assert.match(output,/첫 설정 확인/);return output;
+  }
+  await run(path.join(installed.target,'설정.cmd'),'1\r\n2\r\n0\r\n');
+  assert.deepEqual(JSON.parse(fs.readFileSync(file)),{enabled:false,autoContinue:false});
+  await run(path.join(root,'설정.cmd'),'1\r\n0\r\n');
+  const saved=fs.readFileSync(file,'utf8');assert.deepEqual(JSON.parse(saved),{enabled:true,autoContinue:false});
+  await install(options(home));assert.equal(fs.readFileSync(file,'utf8'),saved);
 });

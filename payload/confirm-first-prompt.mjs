@@ -6,6 +6,7 @@ import { createInterface } from 'node:readline';
 import { spawn } from 'node:child_process';
 import { chooseSettings } from './model-catalog.mjs';
 import { prepareBackground, queueBackground, saveUnsent } from './background-submit.mjs';
+import { readSettings } from './guard-settings.mjs';
 
 const baseDir = dirname(fileURLToPath(import.meta.url));
 const pendingSessions = new Set();
@@ -18,6 +19,7 @@ const defaultCopy = {
   effortHint: '추론 강도는 입력창 아래에서 확인',
   shortcuts: '1·2 선택 · Ctrl+Enter 진행',
   timeoutNotice: '10초 후 현재 설정으로 시작합니다.',
+  manualNotice: '선택 후 Ctrl+Enter를 눌러 주세요.',
   choiceLabel: '현재 설정이 맞나요?',
   correctLabel: '맞습니다',
   changeLabel: '안 맞습니다',
@@ -92,7 +94,7 @@ function firstChoice(elicit, form, timeoutMs) {
     try {
       Promise.resolve(elicit(form, {signal:controller.signal})).then(
         value => finish(value), error => finish(undefined, error));
-      timer = setTimeout(() => {
+      if (timeoutMs !== null) timer = setTimeout(() => {
         if (done) return;
         done = true;
         // Withdraw the outstanding card and ignore any late answer. This is
@@ -104,7 +106,7 @@ function firstChoice(elicit, form, timeoutMs) {
   });
 }
 
-export async function confirmFirstPrompt(input, elicit, stateRoot = join(baseDir, 'state'), copy = copyPendingPrompt, prepare = async () => undefined, picker, {timeoutMs = 10_000} = {}) {
+export async function confirmFirstPrompt(input, elicit, stateRoot = join(baseDir, 'state'), copy = copyPendingPrompt, prepare = async () => undefined, picker, {timeoutMs = 10_000,settingsPath = join(baseDir,'settings.json')} = {}) {
   const ui = loadCopy();
   if (input.hook_event_name !== 'UserPromptSubmit' || typeof input.session_id !== 'string' || !input.session_id) {
     return block(ui.invalidRequest);
@@ -130,12 +132,18 @@ export async function confirmFirstPrompt(input, elicit, stateRoot = join(baseDir
     }
     if (state !== 'armed') return block(ui.invalidState);
     if (pendingSessions.has(key)) return block(ui.pending);
+    const settings = readSettings(settingsPath);
+    if (!settings.enabled) {
+      // Disabling affects this first request, not later prompts if re-enabled.
+      writeFileSync(path, 'confirmed', 'utf8');
+      return {};
+    }
     pendingSessions.add(key);
     try {
       const model = typeof input.model === 'string' ? input.model.replace(/[^a-zA-Z0-9._:-]/g, '').slice(0, 100) : '입력창에서 확인';
       const answer = firstChoice(elicit, {
         mode: 'form',
-        message: [ui.name, '', modelLabel(model), ui.effortHint, '', ui.shortcuts, ui.timeoutNotice].join('\n'),
+        message: [ui.name, '', modelLabel(model), ui.effortHint, '', ui.shortcuts, settings.autoContinue ? ui.timeoutNotice : ui.manualNotice].join('\n'),
         // Native single-choice form supplies numbered choices and Ctrl+Enter.
         // Do not use openai/confirmation: its Accept/Decline footer is a
         // different interaction and does not return the selected choice.
@@ -149,7 +157,7 @@ export async function confirmFirstPrompt(input, elicit, stateRoot = join(baseDir
           },
           required: ['decision']
         }
-      }, timeoutMs).then(response => ({ response }), error => ({ error }));
+      }, settings.autoContinue ? timeoutMs : null).then(response => ({ response }), error => ({ error }));
       // The first-submit view can still be switching routes before the card
       // appears. Capture the displayed card's target, not the preceding page.
       let recovery;
@@ -270,7 +278,7 @@ function startServer() {
         case 'initialize': {
           const capability = message.params?.capabilities?.elicitation;
           supportsForm = capability !== undefined && (capability.form !== undefined || capability.url === undefined);
-          result = { protocolVersion: message.params?.protocolVersion ?? '2025-11-25', capabilities: { tools: {} }, serverInfo: { name: loadCopy().name, title: loadCopy().name, version: '5.2.0' } };
+          result = { protocolVersion: message.params?.protocolVersion ?? '2025-11-25', capabilities: { tools: {} }, serverInfo: { name: loadCopy().name, title: loadCopy().name, version: '5.3.0' } };
           break;
         }
         case 'ping': result = {}; break;

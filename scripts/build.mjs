@@ -7,7 +7,7 @@ import {checkPayload} from '../installer.mjs';
 if(process.platform!=='win32')throw Error('Build the Windows installer ZIP on Windows.');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const manifest=checkPayload(root);
-const names=['설치.cmd','installer.mjs','manifest.json','먼저 읽기.txt'];
+const names=['설치.cmd','설정.cmd','installer.mjs','manifest.json','먼저 읽기.txt'];
 const payload=fs.readdirSync(path.join(root,'payload')).sort();
 if(JSON.stringify(payload)!==JSON.stringify(manifest.files.map(f=>f.name).sort()))throw Error('Unexpected files in payload; refusing to package.');
 const dist=path.join(root,'dist');fs.mkdirSync(dist,{recursive:true});

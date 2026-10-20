@@ -14,3 +14,5 @@ auth.json
 config.toml
 hooks.json
 *.tmp
+settings.json
+settings.json.lock

@@ -60,7 +60,7 @@ export function openCli(cli, home, {onRequest,onNotification}={}) {
     child.stdin.write(JSON.stringify({jsonrpc:'2.0',id:key,method,params})+'\n');
   });
   return {request,async initialize(){
-    await request('initialize',{clientInfo:{name:'first_prompt_installer',version:'5.2.0'},capabilities:{experimentalApi:true}});
+    await request('initialize',{clientInfo:{name:'first_prompt_installer',version:'5.3.0'},capabilities:{experimentalApi:true}});
     child.stdin.write(JSON.stringify({method:'initialized'})+'\n');
   },close(){closed=true;failAll();child.kill();}};
 }
@@ -93,7 +93,7 @@ export function mergeHooks(original,target,powershell) {
 
 export function checkPayload(root) {
   const manifest=readJson(path.join(root,'manifest.json'));
-  if(manifest.name!=='codex-first-prompt-confirm'||manifest.version!=='5.2.0'||!Array.isArray(manifest.files))throw Error('설치 패키지 정보가 올바르지 않습니다.');
+  if(manifest.name!=='codex-first-prompt-confirm'||manifest.version!=='5.3.0'||!Array.isArray(manifest.files))throw Error('설치 패키지 정보가 올바르지 않습니다.');
   const seen=new Set();
   for(const entry of manifest.files){
     if(!/^[a-zA-Z0-9._-]+$/.test(entry.name)||seen.has(entry.name)||entry.name.includes('..'))throw Error('설치 파일 이름이 올바르지 않습니다.');
@@ -101,7 +101,7 @@ export function checkPayload(root) {
     const bytes=fs.readFileSync(path.join(root,'payload',entry.name));
     if(digest(bytes)!==entry.sha256)throw Error(`설치 파일이 변경됐습니다: ${entry.name}`);
   }
-  for(const name of ['confirm-first-prompt.mjs','Confirm-FirstPrompt.ps1','app-tools-client.mjs','background-submit.mjs','background-submit-worker.mjs','model-catalog.mjs','ui-copy.json']){
+  for(const name of ['confirm-first-prompt.mjs','Confirm-FirstPrompt.ps1','app-tools-client.mjs','background-submit.mjs','background-submit-worker.mjs','model-catalog.mjs','ui-copy.json','guard-settings.mjs','manage-settings.mjs']){
     if(!seen.has(name))throw Error(`설치 파일이 없습니다: ${name}`);
   }
   return manifest;
@@ -144,6 +144,7 @@ export async function install({root=packageRoot,home,cli,powershell,approve=asyn
     backupDir=path.join(home,'hooks','first-prompt-confirm-backups',new Date().toISOString().replaceAll(':','-')+'-'+randomUUID().slice(0,8));
     fs.mkdirSync(backupDir,{recursive:true});
     for(const entry of manifest.files){replace(path.join(target,entry.name),fs.readFileSync(path.join(root,'payload',entry.name)),'file-'+entry.name);}
+    replace(path.join(target,'설정.cmd'),fs.readFileSync(path.join(root,'설정.cmd')),'settings-launcher.before');
     const configRecord=remember(configPath,'config.toml.before');
     await rpc.request('config/batchWrite',{edits:[{keyPath:'mcp_servers.first_prompt_confirm',value:serverConfig,mergeStrategy:'replace'}],filePath:configPath,reloadUserConfig:false});
     configRecord.installedHash=bytesHash(configPath);
@@ -165,6 +166,7 @@ export async function install({root=packageRoot,home,cli,powershell,approve=asyn
     if(current.config.mcp_servers.first_prompt_confirm.command!==process.execPath)throw Error('MCP 등록 확인에 실패했습니다.');
     fs.writeFileSync(path.join(target,'installation.json'),JSON.stringify({version:manifest.version,installedAt:new Date().toISOString(),node:process.execPath,cli,powershell,backupDir},null,2));
     log('설치 완료: '+target);log('기존 파일 백업: '+backupDir);
+    log('설정 변경: '+path.join(target,'설정.cmd'));
     log('Codex를 열고 새 채팅에서 확인해 주세요. 실행 중인 앱이나 채팅은 종료하지 않았습니다.');
     if(current.config.approval_policy==='never'||current.config.approval_policy?.granular?.mcp_elicitations===false){
       log('현재 권한 설정은 확인 카드를 생략할 수 있습니다. 앱에서 확인 요청이 허용되는 모드를 선택해 주세요. 기존 권한 설정은 바꾸지 않았습니다.');
@@ -192,7 +194,7 @@ async function main(){
   const rl=questionInterface({input:process.stdin,output:process.stdout});
   try{
     const result=await install({home,cli,powershell,approve:async({target})=>{
-      console.log('\nCodex Model Guard 5.2.0 · Windows\n');
+      console.log('\nCodex Model Guard 5.3.0 · Windows\n');
       console.log('등록할 훅:');
       console.log('  1. 새 채팅 시작 시 첫 요청 확인 상태 생성');
       console.log('  2. 첫 요청에서 ⭕/❌ 선택, 10초 무응답이면 현재 설정으로 시작');

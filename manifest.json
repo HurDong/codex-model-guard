@@ -1,10 +1,18 @@
 {
   "name": "codex-first-prompt-confirm",
-  "version": "5.2.0",
+  "version": "5.3.0",
   "platform": "windows",
   "testedAppVersion": "26.1013.4894.0",
   "testedCliVersion": "0.163.0-alpha.10.2",
   "files": [
+    {
+      "name": "guard-settings.mjs",
+      "sha256": "88d7969ac51408afc4aa8c4540bcab0c1e210d14dee9d458a6ee75bbcf20cf69"
+    },
+    {
+      "name": "manage-settings.mjs",
+      "sha256": "f1c91449d4b6fb65858ae6880f46fe484f009020a521b0c83b2ea9d55fb39823"
+    },
     {
       "name": "app-tools-client.mjs",
       "sha256": "d7d148b9589f5fb652ad9cac50f762c934569eb3b7c6fef2cbd171fa99aa55c9"
@@ -19,7 +27,7 @@
     },
     {
       "name": "confirm-first-prompt.mjs",
-      "sha256": "9b602c8b77b7ec82c2441465b83ecfbd26562a07c16786d54ef004b8816ff145"
+      "sha256": "94743fc3f748cdbeb2e99ace3aecbfd19cbfa1c300d9b044bdaa0b6c897f79f1"
     },
     {
       "name": "model-catalog.mjs",

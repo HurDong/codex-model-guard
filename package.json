@@ -1,13 +1,13 @@
 {
   "name": "codex-model-guard",
-  "version": "5.2.0",
+  "version": "5.3.0",
   "private": true,
   "description": "Choose the model and reasoning effort before the first request in Codex for Windows.",
   "type": "module",
   "engines": { "node": ">=20.11" },
   "os": ["win32"],
   "scripts": {
-    "test": "node --test tests/test-confirm-first-prompt.mjs tests/test-settings-picker.mjs tests/test-background-submit.mjs",
+    "test": "node --test tests/test-confirm-first-prompt.mjs tests/test-settings-picker.mjs tests/test-background-submit.mjs tests/test-guard-settings.mjs",
     "test:install": "node --test tests/test-portable-installer.mjs",
     "manifest": "node scripts/update-manifest.mjs",
     "build": "node scripts/build.mjs"
