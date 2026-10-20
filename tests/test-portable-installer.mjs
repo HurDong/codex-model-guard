@@ -109,7 +109,7 @@ test('tampered runtime payload is rejected before install',async()=>{
   assert.throws(()=>checkPayload(bad),/변경/);
 });
 
-test('packaged MCP boots and exposes version 5.1.0 without requesting inference',async()=>{
+test('packaged MCP boots and exposes the manifest version without requesting inference',async()=>{
   const child=spawn(process.execPath,[path.join(root,'payload','confirm-first-prompt.mjs')],{windowsHide:true,stdio:['pipe','pipe','ignore']});
   try{
     const answer=await new Promise((resolve,reject)=>{
@@ -117,7 +117,7 @@ test('packaged MCP boots and exposes version 5.1.0 without requesting inference'
       createInterface({input:child.stdout}).on('line',line=>{const x=JSON.parse(line);if(x.id===1){clearTimeout(timer);resolve(x);}});
       child.stdin.write(JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{capabilities:{elicitation:{form:{}}}}})+'\n');
     });
-    assert.equal(answer.result.serverInfo.version,'5.1.0');
+    assert.equal(answer.result.serverInfo.version,checkPayload(root).version);
   }finally{child.kill();}
 });
 
@@ -137,4 +137,39 @@ test('actual double-click CMD launcher installs with runtime discovery and one Y
   });
   assert.equal(exit,0,output);
   assert.ok(fs.existsSync(path.join(home,'hooks','first-prompt-confirm','installation.json')),output);
+});
+
+test('real CLI withdraws an unanswered card after ten seconds and continues the original request once',async()=>{
+  const home=fresh();await install(options(home));
+  const requests=[],notifications=[];let formAt=0,forms=0,completed=false;
+  const provider=createServer(async(req,res)=>{
+    const chunks=[];for await(const chunk of req)chunks.push(chunk);
+    requests.push(JSON.parse(Buffer.concat(chunks)));
+    const message={id:'msg_timeout',type:'message',role:'assistant',status:'completed',content:[{type:'output_text',text:'LOCAL_TIMEOUT_OK',annotations:[]}]};
+    res.writeHead(200,{'Content-Type':'text/event-stream'});
+    const events=[{type:'response.output_item.done',output_index:0,item:message},
+      {type:'response.completed',response:{id:'resp_timeout',object:'response',status:'completed',model:'gpt-6.1-sol',output:[message],usage:{input_tokens:1,output_tokens:1,total_tokens:2,input_tokens_details:{cached_tokens:0},output_tokens_details:{reasoning_tokens:0}}}}];
+    for(const [sequence_number,event]of events.entries())res.write(`event: ${event.type}\ndata: ${JSON.stringify({sequence_number,...event})}\n\n`);
+    res.end();
+  });
+  await new Promise(r=>provider.listen(0,'127.0.0.1',r));
+  const rpc=openCli(cli,home,{onRequest:item=>{
+    if(item.method==='mcpServer/elicitation/request'){formAt=Date.now();forms++;}
+  },onNotification:item=>{notifications.push(item);if(item.method==='turn/completed')completed=true;}});
+  try{
+    await rpc.initialize();
+    const start=await rpc.request('thread/start',{cwd:home,ephemeral:true,model:'gpt-6.1-sol',modelProvider:'timeout_test',config:{
+      'model_providers.timeout_test':{name:'Local timeout test',base_url:`http://127.0.0.1:${provider.address().port}`,wire_api:'responses',requires_openai_auth:false,request_max_retries:0,stream_max_retries:0}
+    }});
+    await rpc.request('turn/start',{threadId:start.thread.id,effort:'high',input:[{type:'text',text:'LOCAL_TIMEOUT_ORIGINAL_TEXT'}]});
+    const deadline=Date.now()+16000;
+    while(!completed&&Date.now()<deadline)await new Promise(r=>setTimeout(r,50));
+    assert.equal(forms,1);assert.equal(completed,true,JSON.stringify(notifications.map(n=>n.method)));
+    assert.equal(requests.length,1,'one original request proceeds after timeout');
+    assert.ok(Date.now()-formAt>=9500,'must not proceed before the ten-second deadline');
+    assert.equal(requests[0].model,'gpt-6.1-sol');assert.equal(requests[0].reasoning.effort,'high');
+    assert.match(JSON.stringify(requests[0].input),/LOCAL_TIMEOUT_ORIGINAL_TEXT/);
+    assert.ok(notifications.some(n=>n.method==='serverRequest/resolved'),'native outstanding request must be removed');
+    assert.equal(fs.readFileSync(path.join(home,'hooks','first-prompt-confirm','state',sha(start.thread.id)+'.txt'),'utf8'),'confirmed');
+  }finally{rpc.close();provider.closeAllConnections();provider.close();}
 });

@@ -1,6 +1,6 @@
 {
   "name": "codex-first-prompt-confirm",
-  "version": "5.1.0",
+  "version": "5.2.0",
   "platform": "windows",
   "testedAppVersion": "26.1013.4894.0",
   "testedCliVersion": "0.163.0-alpha.10.2",
@@ -19,7 +19,7 @@
     },
     {
       "name": "confirm-first-prompt.mjs",
-      "sha256": "cd720a364541ea78d5f66417a5da6a07c469b8d46a3ce1f56265f8859db234b7"
+      "sha256": "9b602c8b77b7ec82c2441465b83ecfbd26562a07c16786d54ef004b8816ff145"
     },
     {
       "name": "model-catalog.mjs",
@@ -27,7 +27,7 @@
     },
     {
       "name": "ui-copy.json",
-      "sha256": "0a355fbe61e370fd0eb42005aff5e03b4cf0f4b481c907758dcf810c548bef2b"
+      "sha256": "f2294f35ce31a33667f5bc532d5ca6bae62cd84db59c2eb2fd748885133b14c2"
     },
     {
       "name": "Confirm-FirstPrompt.ps1",

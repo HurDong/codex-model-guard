@@ -60,7 +60,7 @@ export function openCli(cli, home, {onRequest,onNotification}={}) {
     child.stdin.write(JSON.stringify({jsonrpc:'2.0',id:key,method,params})+'\n');
   });
   return {request,async initialize(){
-    await request('initialize',{clientInfo:{name:'first_prompt_installer',version:'5.1.0'},capabilities:{experimentalApi:true}});
+    await request('initialize',{clientInfo:{name:'first_prompt_installer',version:'5.2.0'},capabilities:{experimentalApi:true}});
     child.stdin.write(JSON.stringify({method:'initialized'})+'\n');
   },close(){closed=true;failAll();child.kill();}};
 }
@@ -93,7 +93,7 @@ export function mergeHooks(original,target,powershell) {
 
 export function checkPayload(root) {
   const manifest=readJson(path.join(root,'manifest.json'));
-  if(manifest.name!=='codex-first-prompt-confirm'||manifest.version!=='5.1.0'||!Array.isArray(manifest.files))throw Error('설치 패키지 정보가 올바르지 않습니다.');
+  if(manifest.name!=='codex-first-prompt-confirm'||manifest.version!=='5.2.0'||!Array.isArray(manifest.files))throw Error('설치 패키지 정보가 올바르지 않습니다.');
   const seen=new Set();
   for(const entry of manifest.files){
     if(!/^[a-zA-Z0-9._-]+$/.test(entry.name)||seen.has(entry.name)||entry.name.includes('..'))throw Error('설치 파일 이름이 올바르지 않습니다.');
@@ -192,10 +192,11 @@ async function main(){
   const rl=questionInterface({input:process.stdin,output:process.stdout});
   try{
     const result=await install({home,cli,powershell,approve:async({target})=>{
-      console.log('\nCodex Model Guard 5.1.0 · Windows\n');
+      console.log('\nCodex Model Guard 5.2.0 · Windows\n');
       console.log('등록할 훅:');
       console.log('  1. 새 채팅 시작 시 첫 요청 확인 상태 생성');
-      console.log('  2. 첫 요청에서 ⭕/❌ 선택, 변경 시 모델·강도 선택 후 텍스트 원문 전송');
+      console.log('  2. 첫 요청에서 ⭕/❌ 선택, 10초 무응답이면 현재 설정으로 시작');
+      console.log('     변경 확정 시 모델·강도 선택 후 텍스트 원문 전송');
       console.log('설치 위치: '+target);
       console.log('기존 설정은 백업하고 다른 MCP·훅·권한 설정은 유지합니다.');
       console.log('관리자 권한이나 로그인 정보 복사는 필요 없습니다.\n');

@@ -111,3 +111,46 @@ test('binds the displayed confirmation target and reuses that target after decli
   assert.deepEqual(calls, ['elicit', 'capture', 'restore']);
   assert.equal(result.decision, 'block');
 });
+
+test('local deadline permits original turn once, withdraws the card, and ignores late changes', async () => {
+  arm('timeout');
+  let answer, signal, restoreCalls = 0, pickerCalls = 0;
+  const result = await confirmFirstPrompt(input('timeout'), (form, options) => {
+    assert.match(form.message, /10초 후 현재 설정으로 시작/);
+    signal = options.signal;
+    return new Promise(resolve => { answer = resolve; });
+  }, root, () => { restoreCalls++; }, () => new Promise(() => {}), () => { pickerCalls++; }, {timeoutMs:30});
+  assert.deepEqual(result, {});
+  assert.equal(signal.aborted, true);
+  assert.equal(readFileSync(file('timeout'), 'utf8'), 'confirmed');
+  answer({action:'accept',content:{decision:'change'}});
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(restoreCalls, 0); assert.equal(pickerCalls, 0);
+  assert.deepEqual(await confirmFirstPrompt(input('timeout'), never, root), {});
+});
+
+test('cancel and stopped transport remove the deadline without accepting later', async () => {
+  for (const kind of ['cancel', 'stop']) {
+    const id = 'deadline-' + kind; arm(id);
+    const result = await confirmFirstPrompt(input(id), () => kind === 'cancel'
+      ? Promise.resolve({action:'cancel'}) : Promise.reject(Error('Confirmation cancelled')),
+      root, never, undefined, never, {timeoutMs:20});
+    assert.equal(result.decision, 'block');
+    await new Promise(resolve => setTimeout(resolve, 40));
+    assert.equal(readFileSync(file(id), 'utf8'), 'armed');
+  }
+});
+
+test('choosing change ends the deadline; model picker never auto-selects', async () => {
+  arm('deadline-picker');
+  let pick, finished = false;
+  const pending = confirmFirstPrompt({...input('deadline-picker'),prompt:'원문'},
+    async () => ({action:'accept',content:{decision:'change'}}), root, async () => true,
+    undefined, () => new Promise(resolve => { pick = resolve; }), {timeoutMs:20})
+    .then(result => { finished = true; return result; });
+  await new Promise(resolve => setTimeout(resolve, 50));
+  assert.equal(finished, false);
+  assert.equal(readFileSync(file('deadline-picker'), 'utf8'), 'armed');
+  pick(null);
+  assert.equal((await pending).decision, 'block');
+});
