@@ -1,0 +1,53 @@
+{
+  "name": "codex-first-prompt-confirm",
+  "version": "5.1.0",
+  "platform": "windows",
+  "testedAppVersion": "26.1013.4894.0",
+  "testedCliVersion": "0.163.0-alpha.10.2",
+  "files": [
+    {
+      "name": "app-tools-client.mjs",
+      "sha256": "d7d148b9589f5fb652ad9cac50f762c934569eb3b7c6fef2cbd171fa99aa55c9"
+    },
+    {
+      "name": "background-submit.mjs",
+      "sha256": "7166f90c55d18d5e64e4aab1252e818223d37e4313c674a3d69b613b1cb59b23"
+    },
+    {
+      "name": "background-submit-worker.mjs",
+      "sha256": "68130cd1319bcd05be31f1517ecb3204142ac58ed5398ed05b5a9236ae2e98ae"
+    },
+    {
+      "name": "confirm-first-prompt.mjs",
+      "sha256": "cd720a364541ea78d5f66417a5da6a07c469b8d46a3ce1f56265f8859db234b7"
+    },
+    {
+      "name": "model-catalog.mjs",
+      "sha256": "1e937dfcdbb606381d9618dc98199b4948534c2f003fab032bf690d3c919c8e8"
+    },
+    {
+      "name": "ui-copy.json",
+      "sha256": "0a355fbe61e370fd0eb42005aff5e03b4cf0f4b481c907758dcf810c548bef2b"
+    },
+    {
+      "name": "Confirm-FirstPrompt.ps1",
+      "sha256": "87a56394d2bf9235a7b64caa8962ffe49ac755565e635d6fde14b7a41b5fd55e"
+    },
+    {
+      "name": "Capture-RecoveryTarget.ps1",
+      "sha256": "fa9c3fb4feb8d38d835d0b4da133c03c3646f1ded89bd69eac96592947e469d8"
+    },
+    {
+      "name": "Copy-PendingPrompt.ps1",
+      "sha256": "71116db82fb1db9f644d26a7045f307ec755f7b483342923430b862c47c53c25"
+    },
+    {
+      "name": "LocalRecovery.psm1",
+      "sha256": "3ba6cbfe1afb2d2e629996c28fd9daec6ac4bd4bfa13c47ee695a30683e72800"
+    },
+    {
+      "name": "Restore-PendingPrompt.ps1",
+      "sha256": "2417a8b46c87972adfdc749f0813206ce8afffadb8c98c4a1407f70e57c9ff5d"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+state/
+background/
+*backups*/
+installation.json
+model-catalog.json
+recovery-status.json
+auth.json
+config.toml
+hooks.json
+*.tmp

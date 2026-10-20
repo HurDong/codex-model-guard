@@ -1,0 +1,17 @@
+{
+  "name": "시작 설정",
+  "confirmation": "시작 설정\n\n{model}\n추론 강도는 입력창 아래에서 확인\n\n1·2 선택 · Ctrl+Enter 진행",
+  "effortHint": "추론 강도는 입력창 아래에서 확인",
+  "shortcuts": "1·2 선택 · Ctrl+Enter 진행",
+  "declined": "모델을 고른 뒤 다시 보내 주세요.",
+  "restoreUnavailable": "메시지의 ‘수정’을 눌러 다시 열어 주세요.",
+  "cancelled": "전송을 취소했어요.",
+  "invalidRequest": "질문을 확인하지 못했어요. 다시 보내 주세요.",
+  "invalidState": "설정을 불러오지 못했어요. 다시 시도해 주세요.",
+  "pending": "설정 확인이 이미 열려 있어요.",
+  "automaticAcceptance": "설정 확인이 생략됐어요. 권한을 ‘맞춤형’으로 바꿔 주세요.",
+  "failed": "설정 확인을 마치지 못했어요. 다시 시도해 주세요.",
+  "choiceLabel": "현재 설정이 맞나요?",
+  "correctLabel": "⭕ 맞습니다",
+  "changeLabel": "❌ 안 맞습니다"
+}

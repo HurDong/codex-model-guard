@@ -1,0 +1,4 @@
+* text=auto eol=lf
+# Preserve exact payload bytes so manifest hashes survive every checkout.
+payload/** -text
+*.cmd text eol=crlf
